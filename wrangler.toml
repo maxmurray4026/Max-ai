@@ -1,0 +1,10 @@
+name = "maxintensity-ai"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+
+[vars]
+ACCESS_CODES = "MAX2026,MAXBETA,INTENSITY"
+
+[[kv_namespaces]]
+binding = "BOARD"
+id = "f74c8f14c7094fec8ec4489b5e6c6713"
