@@ -1,0 +1,6 @@
+name = "maxintensity-ai"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+
+[vars]
+ACCESS_CODES = "MAX2026,MAXBETA,INTENSITY"
