@@ -4,7 +4,15 @@ compatibility_date = "2026-08-01"
 
 [vars]
 ACCESS_CODES = "MAX2026,MAXBETA,INTENSITY"
+# Web push. The PRIVATE key is a secret:  wrangler secret put VAPID_PRIVATE_KEY
+# The public key is safe to ship — paste the base64url public key here.
+VAPID_PUBLIC_KEY = "BNCrerliOTMAYNlOcj3o1Wd4HV5EAJIHyhtlRcPMqgyGGS2sReqWCGrPw_T93c9CFOHhVeiOSJ-VnN6umHDt5Ns"
+VAPID_SUBJECT = "https://maxintensity.app/"
 
 [[kv_namespaces]]
 binding = "BOARD"
 id = "f74c8f14c7094fec8ec4489b5e6c6713"
+
+# Sends queued "not going today" nudges when they fall due (every 15 minutes).
+[triggers]
+crons = ["*/15 * * * *"]
