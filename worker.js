@@ -21,6 +21,9 @@ const ALLOWED_ORIGINS = [
   "https://maxintensity.app",
   "https://www.maxintensity.app",
   "https://maxmurray4026.github.io",
+  "capacitor://localhost",   // the iOS app (Capacitor WKWebView)
+  "ionic://localhost",
+  "http://localhost",
 ];
 const ALLOWED_ORIGIN = ALLOWED_ORIGINS[0];
 const MAX_TOKENS_CAP = 1200; // cost guard — no request can exceed this
@@ -168,7 +171,7 @@ export default {
     const cors = {
       "Access-Control-Allow-Origin": allowOrigin,
       Vary: "Origin",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, x-mi-app, x-mi-code, x-mi-usage, x-mi-tier, x-mi-feature",
       "Access-Control-Expose-Headers": "x-mi-member",
     };
@@ -191,6 +194,14 @@ export default {
       if (!env.BOARD) return new Response(JSON.stringify({ error: "board not set up" }), { status: 503, headers: jh });
       const tok = (request.headers.get("x-mi-app") || "").trim();
       if (tok !== (env.APP_TOKEN || "").trim()) return new Response(JSON.stringify({ error: "no" }), { status: 401, headers: jh });
+
+      if (request.method === "DELETE") {
+        let b; try { b = await request.json(); } catch { b = {}; }
+        const handle = String(b.handle || "").replace(/^@/, "").toLowerCase().trim();
+        if (!/^[a-z0-9._]{2,30}$/.test(handle)) return new Response(JSON.stringify({ error: "bad handle" }), { status: 400, headers: jh });
+        await env.BOARD.delete("u:" + handle);
+        return new Response(JSON.stringify({ ok: true }), { headers: jh });
+      }
 
       if (request.method === "POST") {
         let b; try { b = await request.json(); } catch { return new Response(JSON.stringify({ error: "bad" }), { status: 400, headers: jh }); }
@@ -223,6 +234,16 @@ export default {
       if (!env.BOARD) return new Response(JSON.stringify({ error: "not set up" }), { status: 503, headers: jh });
       const tok = (request.headers.get("x-mi-app") || "").trim();
       if (tok !== (env.APP_TOKEN || "").trim()) return new Response(JSON.stringify({ error: "no" }), { status: 401, headers: jh });
+
+      if (request.method === "DELETE") {
+        let b; try { b = await request.json(); } catch { b = {}; }
+        const handle = String(b.handle || "").replace(/^@/, "").toLowerCase().trim();
+        if (!/^[a-z0-9._]{2,30}$/.test(handle)) return new Response(JSON.stringify({ error: "bad handle" }), { status: 400, headers: jh });
+        const mine = await env.BOARD.list({ prefix: "t:", limit: 1000 });
+        let n = 0;
+        for (const k of mine.keys) { if (k.name.endsWith(":" + handle)) { await env.BOARD.delete(k.name); n++; } }
+        return new Response(JSON.stringify({ ok: true, removed: n }), { headers: jh });
+      }
 
       if (request.method === "POST") {
         let b; try { b = await request.json(); } catch { return new Response(JSON.stringify({ error: "bad" }), { status: 400, headers: jh }); }
@@ -310,7 +331,7 @@ export default {
     // Health check: shows whether the secrets are wired (never shows their values)
     if (request.method !== "POST") {
       const status =
-        "Max Intensity relay v7.1" +
+        "Max Intensity relay v7.2" +
         " | board: " + (env.BOARD ? "ok" : "NOT SET UP") +
         " | key: " + (env.ANTHROPIC_API_KEY ? "ok" : "MISSING") +
         " | token: " + (env.APP_TOKEN ? "ok" : "MISSING") +
